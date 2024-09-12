@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Doppler</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="main.js"></script>
+  </head>
+  <body style="overscroll-behavior-y: contain">
+    <canvas id="canvas" class="bg-black"></canvas>
+    <button
+      id="frequencyControl"
+      class="absolute bottom-10 right-10 text-white font-black"
+    >
+      &lt; <span id="frequencyDisplay">20 kHz</span>
+    </button>
+    <div
+      id="frequencyOptions"
+      class="hidden absolute bottom-20 right-9 space-y-2 text-black font-black bg-white rounded-2xl p-2 flex-col"
+    >
+      <button frequency="20000" class="block">20 kHz</button>
+      <button frequency="10000" class="block">10 kHz</button>
+      <button frequency="5000" class="block text-right">5 kHz</button>
+      <button frequency="1000" class="block text-right">1 kHz</button>
+      <button frequency="500" class="block">500 Hz</button>
+      <button frequency="100" class="block">100 Hz</button>
+    </div>
+  </body>
+</html>
