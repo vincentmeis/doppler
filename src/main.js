@@ -53,6 +53,7 @@ function renderPulse() {
   }
   animationRequest = requestAnimationFrame(renderPulse);
 }
+
 function renderSnow() {
   const snowImageData = canvasContext.createImageData(
     canvas.width,
@@ -75,7 +76,6 @@ const growthRate = 0.001;
 let animationRequest;
 let whiteStop = 0;
 let expanding = true;
-let renderingSnow = false;
 
 const frequencyButton = document.getElementById("frequencyControl");
 const frequencyDisplay = document.getElementById("frequencyDisplay");
@@ -93,8 +93,10 @@ if (savedFilterFrequency) {
 }
 let audioContext;
 let audioSource;
+let biquadFilter;
 let lastFilterFrequency = filterFrequency;
 let audioSourceStarted = false;
+
 optionsButtons.forEach((button) => {
   button.addEventListener("click", () => {
     frequencyDisplay.textContent = button.textContent;
@@ -103,37 +105,40 @@ optionsButtons.forEach((button) => {
     localStorage.setItem("filterFrequency", filterFrequency);
     if (filterFrequency !== lastFilterFrequency) {
       lastFilterFrequency = filterFrequency;
-      if (typeof audioContext !== "undefined") {
-        audioContext.close();
-        audioSourceStarted = false;
-      }
-      audioContext = new AudioContext();
-      const biquadFilter = audioContext.createBiquadFilter();
-      biquadFilter.type = "lowpass";
-      biquadFilter.frequency.value = filterFrequency;
-      const audioBuffer = audioContext.createBuffer(
-        2,
-        audioContext.sampleRate * 10, // 10 seconds
-        audioContext.sampleRate
-      );
-      audioSource = audioContext.createBufferSource();
-      for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-        const channelBuffer = audioBuffer.getChannelData(channel);
-        for (let i = 0; i < audioBuffer.length; i++) {
-          channelBuffer[i] = Math.random() * 2 - 1;
+      if (typeof audioContext == "undefined") {
+        // there is no context yet
+        audioContext = new AudioContext();
+        biquadFilter = audioContext.createBiquadFilter();
+        biquadFilter.type = "lowpass";
+        biquadFilter.frequency.value = filterFrequency;
+        const audioBuffer = audioContext.createBuffer(
+          2,
+          audioContext.sampleRate * 10, // 10 seconds
+          audioContext.sampleRate
+        );
+        audioSource = audioContext.createBufferSource();
+        for (
+          let channel = 0;
+          channel < audioBuffer.numberOfChannels;
+          channel++
+        ) {
+          const channelBuffer = audioBuffer.getChannelData(channel);
+          for (let i = 0; i < audioBuffer.length; i++) {
+            channelBuffer[i] = Math.random() * 2 - 1;
+          }
         }
-      }
-      audioSource.buffer = audioBuffer;
-      audioSource.loop = true;
-      audioSource.connect(biquadFilter);
-      biquadFilter.connect(audioContext.destination);
-      if (renderingSnow) {
-        audioSource.start();
-        audioSourceStarted = true;
+        audioSource.buffer = audioBuffer;
+        audioSource.loop = true;
+        audioSource.connect(biquadFilter);
+        biquadFilter.connect(audioContext.destination);
+      } else {
+        // the context already exists
+        biquadFilter.frequency.value = filterFrequency;
       }
     }
   });
 });
+
 frequencyButton.addEventListener("click", () => {
   if (getComputedStyle(frequencyOptions).display === "none") {
     frequencyOptions.style.display = "flex";
@@ -141,10 +146,12 @@ frequencyButton.addEventListener("click", () => {
     frequencyOptions.style.display = "none";
   }
 });
+
 canvas.addEventListener("click", () => {
   if (typeof audioContext === "undefined") {
+    // there is no context yet
     audioContext = new AudioContext();
-    const biquadFilter = audioContext.createBiquadFilter();
+    biquadFilter = audioContext.createBiquadFilter();
     biquadFilter.type = "lowpass";
     biquadFilter.frequency.value = filterFrequency;
     const audioBuffer = audioContext.createBuffer(
@@ -166,22 +173,21 @@ canvas.addEventListener("click", () => {
     audioSource.start();
     audioSourceStarted = true;
     animationRequest = requestAnimationFrame(renderSnow);
-    renderingSnow = true;
   } else {
+    // the context already exists
     if (!audioSourceStarted) {
+      // the audio source needs to be started
       audioSource.start();
       audioSourceStarted = true;
       animationRequest = requestAnimationFrame(renderSnow);
-      renderingSnow = true;
     } else {
+      // the audio source is running or suspended
       if (audioContext.state === "running") {
         audioContext.suspend();
         cancelAnimationFrame(animationRequest);
-        renderingSnow = false;
       } else {
         audioContext.resume();
         animationRequest = requestAnimationFrame(renderSnow);
-        renderingSnow = true;
       }
     }
   }
